@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>生産管理 | 第一工場</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --side:#15211b; --g:#1f8a4c; --gd:#176b3a; --gl:#b4dfb1; --gbg:#e4f3e5; --plan:#dde1df;
+  --delay:#fde6b0; --delayb:#e4a11b; --amber:#e8a013; --red:#d9443f;
+  --bg:#f3f5f4; --line:#e1e6e3; --text:#16211c; --sub:#647069; --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:"Noto Sans JP","Yu Gothic UI","Meiryo",sans-serif;color:var(--text);background:var(--bg);display:grid;grid-template-columns:222px 1fr;min-width:1180px;overflow:hidden;-webkit-font-smoothing:antialiased;font-size:14px}
+button{font:inherit;color:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font:inherit;color:inherit}
+svg.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.num{font-variant-numeric:tabular-nums}
+
+/* sidebar */
+.side{background:var(--side);color:#fff;height:100vh;display:flex;flex-direction:column;padding:20px 8px 14px}
+.brand{display:flex;align-items:center;gap:12px;font-size:23px;font-weight:900;padding:2px 16px 24px;letter-spacing:.04em}
+.brand svg{width:34px;height:34px}
+.nav{display:flex;flex-direction:column;gap:6px}
+.nav button{display:flex;align-items:center;gap:14px;height:50px;padding:0 16px;border-radius:8px;font-size:17px;font-weight:500;color:#dbe5df;transition:.15s;text-align:left}
+.nav button svg{width:24px;height:24px}
+.nav button:hover{background:rgba(255,255,255,.07)}
+.nav button.on{background:var(--g);color:#fff;font-weight:700}
+.side-foot{margin-top:auto;border-top:1px solid rgba(255,255,255,.14);padding:14px 12px 0;display:flex;align-items:center;gap:12px;font-size:16px;font-weight:500}
+.side-foot button{margin-left:auto;width:36px;height:36px;border-radius:8px;display:grid;place-items:center;color:#cbd6d0}
+.side-foot button:hover{background:rgba(255,255,255,.1);color:#fff}
+
+/* topbar */
+.main{height:100vh;display:flex;flex-direction:column;min-width:0}
+.topbar{height:50px;flex:none;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 22px}
+.crumb{font-size:15px;font-weight:500;margin-right:auto}
+.crumb i{font-style:normal;color:#98a39d;margin:0 8px}
+.live{display:flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:99px;border:1px solid var(--line);font-size:12px;font-weight:700;color:var(--sub)}
+.live .d{width:8px;height:8px;border-radius:50%;background:#b3bcb7}
+.live.on{color:var(--gd);border-color:#bfe0c6;background:#f1f9f2}
+.live.on .d{background:var(--g);animation:pulse 1.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(31,138,76,.5)}100%{box-shadow:0 0 0 8px rgba(31,138,76,0)}}
+.speed{height:30px;padding:0 10px;border-radius:99px;border:1px solid var(--line);font-size:12px;font-weight:700;color:var(--sub)}
+.speed:hover,.live:hover{border-color:#9fb1a7}
+.search{position:relative;width:330px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--sub);width:18px;height:18px}
+.search input{width:100%;height:34px;border:1px solid #cfd6d2;border-radius:7px;padding:0 12px 0 38px;outline:none;font-size:14px}
+.search input:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(31,138,76,.15)}
+.bell{position:relative;width:38px;height:38px;border-radius:50%;display:grid;place-items:center}
+.bell:hover{background:var(--bg)}
+.bell .dot{position:absolute;top:6px;right:7px;width:10px;height:10px;border-radius:50%;background:var(--g);border:2px solid #fff}
+.avatar{width:36px;height:36px;border-radius:50%;background:#cfd5d2;display:grid;place-items:center;color:#5b6660}
+.menu{position:absolute;top:46px;right:60px;width:320px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 40px rgba(21,33,27,.18);padding:8px;display:none;z-index:30}
+.menu.show{display:block;animation:up .18s}
+.menu h4{font-size:12px;color:var(--sub);padding:6px 10px}
+.menu button{display:block;width:100%;text-align:left;padding:9px 10px;border-radius:8px;font-size:13px}
+.menu button:hover{background:var(--bg)}.menu button b{display:block}
+.menu p{padding:14px 10px;color:var(--sub);font-size:13px}
+
+/* page */
+.page{flex:1;overflow:auto;padding:16px 20px 18px}
+.ph{display:flex;align-items:flex-end;margin-bottom:12px}
+.ph h1{font-size:38px;font-weight:900;line-height:1.15;letter-spacing:.02em}
+.ph p{font-size:17px;margin-top:2px}
+.ph .acts{margin-left:auto;display:flex;gap:18px;padding-bottom:10px}
+.btn{height:44px;padding:0 22px;border-radius:7px;display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:17px;white-space:nowrap;transition:.15s}
+.btn.primary{background:var(--g);color:#fff}.btn.primary:hover{background:var(--gd)}
+.btn.ghost{background:#fff;border:1.5px solid var(--g);color:var(--gd)}.btn.ghost:hover{background:var(--gbg)}
+.btn.plain{background:#fff;border:1px solid #cfd6d2;color:var(--text)}.btn.plain:hover{background:var(--bg)}
+.btn.danger{background:#fff;border:1.5px solid var(--red);color:var(--red)}.btn.danger:hover{background:#fdecec}
+.btn.sm{height:32px;padding:0 12px;font-size:13px;gap:6px;border-radius:6px}.btn.sm svg{width:15px;height:15px}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius)}
+.card>h2,.card .hd h2{font-size:21px;font-weight:900}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr) 360px;gap:12px;margin-bottom:14px}
+.kpi{padding:10px 16px 12px;position:relative}
+.kpi .lb{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.kpi .v{font-size:38px;font-weight:900;line-height:1.2}.kpi .v small{font-size:19px;font-weight:700;margin-left:6px}
+.kpi .v em{font-style:normal;font-weight:700;font-size:32px}
+.kpi .rate{position:absolute;right:16px;top:40px;font-size:15px;font-weight:500}
+.kpi .rate b{font-size:17px}
+.track{height:8px;border-radius:9px;background:var(--plan);overflow:hidden}
+.track i{display:block;height:100%;background:var(--g);border-radius:9px;transition:width .6s}
+.track.delay i{background:var(--amber)}
+.dotw{width:12px;height:12px;border-radius:50%;background:var(--amber);display:inline-block;flex:none}
+.cols{display:grid;grid-template-columns:1fr 360px;gap:14px;margin-bottom:14px;align-items:start}
+.rcol{display:flex;flex-direction:column;gap:12px}
+
+/* gantt */
+.gcard{padding:12px 12px 12px}
+.ghd{display:flex;align-items:center;gap:14px;padding:2px 6px 14px}
+.ghd h2{margin-right:auto}
+.sel{height:34px;border:1px solid #cfd6d2;border-radius:6px;background:#fff;padding:0 10px;font-size:14px;outline:none;min-width:140px}
+.seg{display:flex;background:var(--plan);border-radius:7px;padding:2px}
+.seg button{width:54px;height:30px;border-radius:6px;font-size:14px;font-weight:500;color:#4b5650}
+.seg button.on{background:var(--g);color:#fff;font-weight:700}
+.gantt{border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.grow{display:grid;grid-template-columns:86px 182px 1fr;border-top:1px solid var(--line)}
+.grow:first-child{border-top:none;background:#f1f3f2}
+.grow>div{border-left:1px solid var(--line);position:relative}
+.grow>div:first-child{border-left:none}
+.gc{display:flex;align-items:center;padding:0 14px;font-size:16px;font-weight:500}
+.gc.ln{font-weight:700;font-size:17px}
+.grow.hd .gc{font-weight:700;font-size:15px;height:52px}
+.tl{margin:0 34px;position:relative;height:100%}
+.grid-lines{position:absolute;inset:0 34px;background-image:linear-gradient(to right,#e9edeb 1px,transparent 1px);background-size:10% 100%;border-right:1px solid #e9edeb}
+.tick{position:absolute;bottom:6px;transform:translateX(-50%);font-size:14px;font-weight:500}
+.nowtag{position:absolute;top:2px;transform:translateX(-50%);background:var(--g);color:#fff;font-size:12px;font-weight:700;border-radius:5px;padding:2px 9px;white-space:nowrap;z-index:3;transition:left .5s linear}
+.nowline{position:absolute;top:-1px;bottom:-1px;width:2px;margin-left:-1px;background:var(--g);z-index:2;transition:left .5s linear}
+.bar{position:absolute;height:40px;border-radius:5px;padding:2px 12px;overflow:hidden;white-space:nowrap;cursor:pointer;display:flex;flex-direction:column;justify-content:center;line-height:1.25;transition:filter .15s,left .4s,width .4s;border:1px solid transparent}
+.bar:hover{filter:brightness(.95)}
+.bar b{font-size:13px}.bar span{font-size:12px}
+.bar.done{background:var(--gl)}
+.bar.doing{background:linear-gradient(110deg,var(--g) 40%,#3cab6b 50%,var(--g) 60%);background-size:260% 100%;animation:shine 2.6s linear infinite;color:#fff}
+@keyframes shine{from{background-position:120% 0}to{background-position:-140% 0}}
+.bar.plan{background:var(--plan)}
+.bar.delay{background:var(--delay);border:2px solid var(--delayb)}
+.bar.maint{background:repeating-linear-gradient(135deg,#e3e6e4 0 6px,#cfd4d1 6px 9px);color:#333}
+.legend{display:flex;gap:22px;padding:12px 8px 0;font-size:13px}
+.legend span{display:flex;align-items:center;gap:8px}
+.legend i{width:32px;height:14px;border-radius:3px;display:block}
+.week{display:grid;grid-template-columns:86px repeat(7,1fr);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.week>div{border-left:1px solid var(--line);border-top:1px solid var(--line);padding:8px 8px;min-height:58px;font-size:12px}
+.week .wh{background:#f1f3f2;font-weight:700;font-size:13px;min-height:0;text-align:center}
+.week .today{background:#f1f9f2}
+.wk{border-radius:5px;padding:5px 8px;line-height:1.35}
+.wk b{display:block;font-size:12px}
+
+/* alerts / feed */
+.acard{padding:12px 12px 6px}
+.acard h2{padding:0 6px 8px;display:flex;align-items:center;gap:12px}
+.cnt{min-width:30px;height:30px;border-radius:50%;background:#fde2a7;display:grid;place-items:center;font-size:17px;font-weight:700}
+.alert{border:1px solid var(--line);border-radius:8px;padding:8px 12px 8px 44px;margin-bottom:8px;position:relative;cursor:pointer;transition:.15s}
+.alert:hover{border-color:#a9b8b0;background:#fafcfb}
+.alert .ai{position:absolute;left:13px;top:11px;color:#555}
+.alert .ai .dotw{margin:4px 2px}
+.alert b{font-size:17px}.alert b i{font-style:normal;color:#9aa5a0;font-weight:400;margin:0 7px}
+.alert p{font-size:14px;margin-top:1px}
+.alert small{font-size:13px;color:var(--sub);display:flex;margin-top:2px}
+.alert small a{margin-left:auto;color:var(--gd);font-weight:700;font-size:14px}
+.alert.new,.fi.new{animation:flash 1.6s}
+@keyframes flash{0%{background:#fff3d1;transform:translateY(-8px);opacity:0}25%{opacity:1;transform:none}100%{background:transparent}}
+.none{padding:22px 8px 26px;text-align:center;color:var(--sub);font-size:14px}
+.none svg{width:34px;height:34px;color:var(--g);display:block;margin:0 auto 6px}
+.fcard{padding:14px 16px 6px}
+.fcard h2{margin-bottom:8px}
+.feed{max-height:176px;overflow:auto}
+.fi{display:flex;align-items:center;gap:16px;padding:8px 0;border-top:1px solid var(--line);font-size:15px}
+.fi time{background:#eceeed;border-radius:4px;padding:1px 9px;font-size:15px;font-weight:500;flex:none}
+
+/* table */
+.tcard{padding:8px 14px 12px}
+.tcard .hd{display:flex;align-items:center;padding:4px 4px 8px}
+.tcard .hd a{margin-left:auto;color:var(--gd);font-weight:700;font-size:15px;cursor:pointer}
+table.t{width:100%;border-collapse:collapse;font-size:16px}
+.t th{text-align:left;background:#f1f3f2;font-size:14px;font-weight:700;padding:6px 16px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);white-space:nowrap}
+.t td{padding:7px 16px;border-bottom:1px solid #cfd5d2;vertical-align:middle}
+.t tbody tr{cursor:pointer;transition:.12s}.t tbody tr:hover{background:#f4f9f5}
+.t .r{text-align:right}
+.prog{display:flex;align-items:center;gap:14px}.prog .track{width:220px;flex:none}.prog span{font-size:15px;width:44px;text-align:right}
+.chip{display:inline-block;min-width:78px;text-align:center;font-size:13px;font-weight:700;border-radius:99px;padding:2px 12px;white-space:nowrap}
+.c-doing{background:#c9e9cb;color:#165f35}.c-delay{background:#fddc94;color:#7a4d00}.c-plan{background:#e4e7e6;color:#4b5650}
+.c-done{background:#fff;color:var(--gd);box-shadow:inset 0 0 0 1.5px #9fd1ab}.c-warn{background:#fde2a7;color:#7a4d00}.c-ng{background:#fbd5d3;color:#a52620}
+.foot{text-align:right;font-size:13px;color:var(--sub);margin-top:10px}
+
+/* other pages */
+.g2{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+.pcard{padding:14px 18px 16px}.pcard h2{font-size:18px;margin-bottom:10px;display:flex;align-items:center}
+.pcard h2 small{margin-left:auto;font-size:12px;color:var(--sub);font-weight:500;display:flex;gap:14px}
+.pcard h2 small i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.chart{width:100%;height:auto;display:block}
+.chart text{font-size:11px;fill:#647069;font-family:inherit}
+.lrow{display:grid;grid-template-columns:54px 130px 1fr 52px 84px;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.lrow:first-of-type{border-top:none}.lrow b{font-size:15px}
+.kan{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
+.kcol{background:#e9edeb;border-radius:10px;padding:10px}
+.kcol h3{font-size:15px;padding:4px 6px 10px;display:flex;align-items:center;gap:8px}
+.kcol h3 span{background:#fff;border-radius:99px;font-size:12px;padding:1px 9px}
+.kc{background:#fff;border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin-bottom:8px;border-left:4px solid var(--plan)}
+.kc.doing{border-left-color:var(--g)}.kc.delay{border-left-color:var(--delayb)}.kc.done{border-left-color:var(--gl);opacity:.8}
+.kc .top{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub)}
+.kc .top b{background:var(--side);color:#fff;border-radius:4px;padding:1px 7px;font-size:12px}
+.kc .top .chip{margin-left:auto;min-width:0;font-size:11px}
+.kc h4{font-size:16px;margin:6px 0 2px}.kc p{font-size:12px;color:var(--sub)}
+.kc .bt{display:flex;align-items:center;gap:10px;margin-top:8px}.kc .bt .track{flex:1}
+.stockbar{position:relative;width:170px;height:8px;border-radius:9px;background:var(--plan)}
+.stockbar i{position:absolute;left:0;top:0;bottom:0;border-radius:9px;background:var(--g)}
+.stockbar.low i{background:var(--red)}.stockbar.warn i{background:var(--amber)}
+.stockbar u{position:absolute;top:-4px;bottom:-4px;width:2px;background:#333;left:50%}
+.eq{padding:16px 18px;display:grid;grid-template-columns:1fr 78px;gap:6px 12px;align-items:center}
+.eq h3{font-size:17px}.eq p{font-size:13px;color:var(--sub)}
+.eq dl{grid-column:1/3;display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px;border-top:1px solid var(--line);padding-top:10px;margin-top:6px}
+.eq dt{color:var(--sub);font-size:11px}.eq dd{font-weight:700}
+.eq .btn{grid-column:1/3;justify-content:center;margin-top:6px}
+.ring text{font-size:15px;font-weight:900;fill:var(--text);font-family:inherit}
+.pareto div{display:grid;grid-template-columns:76px 1fr 40px;align-items:center;gap:10px;font-size:13px;padding:6px 0}
+.pareto i{display:block;height:16px;border-radius:4px;background:var(--g)}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(15,25,20,.5);backdrop-filter:blur(3px);display:none;place-items:center;z-index:50}
+.ov.show{display:grid;animation:fade .2s}
+@keyframes fade{from{opacity:0}}@keyframes up{from{transform:translateY(14px);opacity:0}}
+.modal{background:#fff;border-radius:14px;width:560px;max-width:94vw;max-height:92vh;overflow:auto;box-shadow:0 30px 80px rgba(15,25,20,.35);animation:up .25s}
+.modal header{display:flex;align-items:center;gap:12px;padding:18px 22px 12px}
+.modal header h3{font-size:20px;font-weight:900;margin-right:auto}
+.modal header .x{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;color:var(--sub)}.modal header .x:hover{background:var(--bg)}
+.modal .mb{padding:4px 22px 8px}
+.modal footer{display:flex;gap:10px;justify-content:flex-end;padding:14px 22px 20px}
+.modal footer .l{margin-right:auto}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fg label{display:block;font-size:12px;font-weight:700;color:var(--sub)}
+.fg label.w{grid-column:1/3}
+.fg input,.fg select{display:block;width:100%;height:42px;margin-top:5px;border:1px solid #cfd6d2;border-radius:7px;padding:0 12px;font-size:15px;outline:none;background:#fff;font-weight:500;color:var(--text)}
+.fg input:focus,.fg select:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(31,138,76,.15)}
+.dl{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;background:var(--bg);border-radius:10px;padding:14px;margin-bottom:14px}
+.dl dt{font-size:11px;color:var(--sub)}.dl dd{font-size:18px;font-weight:900}
+.steps{margin:12px 0}
+.steps div{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.steps div b{width:90px}.steps div span{color:var(--sub);margin-right:auto}
+.note{background:#fff8e6;border:1px solid #f3dca4;border-radius:8px;padding:12px 14px;font-size:14px;line-height:1.7;margin-bottom:6px}
+.note.g{background:var(--gbg);border-color:#bfe0c6}
+.inline{display:flex;gap:10px;align-items:flex-end;margin-top:6px}
+.inline label{flex:1;font-size:12px;font-weight:700;color:var(--sub)}
+.inline input{display:block;width:100%;height:42px;margin-top:5px;border:1px solid #cfd6d2;border-radius:7px;padding:0 12px;font-size:15px;outline:none}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,80px);background:var(--side);color:#fff;padding:12px 18px;border-radius:10px;font-size:14px;font-weight:500;display:flex;gap:14px;box-shadow:0 10px 30px rgba(15,25,20,.35);transition:.3s;z-index:99;opacity:0}
+.toast.show{transform:translate(-50%,0);opacity:1}.toast button{color:#8fe0a9;font-weight:700}
+</style>
+</head>
+<body>
+<aside class="side">
+  <div class="brand"><svg viewBox="0 0 34 34"><path d="M3 31V17l9-6v6l9-13v27z" fill="#fff"/><path d="M23 31V12l8 5v14z" fill="#fff" opacity=".85"/></svg>生産管理</div>
+  <nav class="nav" id="nav"></nav>
+  <div class="side-foot"><svg class="ic" style="width:26px;height:26px"><use href="#i-factory"/></svg>第一工場<button data-act="settings" title="設定"><svg class="ic" style="width:24px;height:24px"><use href="#i-gear"/></svg></button></div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <div class="crumb">第一工場<i>/</i><span id="crumb"></span></div>
+    <button class="live" id="live" data-act="live" title="ライブ更新の一時停止 / 再開"><span class="d"></span><span id="livetxt"></span></button>
+    <button class="speed" id="speed" data-act="speed" title="デモの進行速度"></button>
+    <div class="search"><svg class="ic"><use href="#i-search"/></svg><input id="q" placeholder="指示番号・製品名で検索" autocomplete="off"></div>
+    <button class="bell" data-act="bell"><svg class="ic" style="width:24px;height:24px"><use href="#i-bell"/></svg><span class="dot" id="belldot"></span></button>
+    <div class="avatar"><svg class="ic"><use href="#i-user"/></svg></div>
+    <div class="menu" id="bellmenu"></div>
+  </header>
+  <div class="page" id="page"></div>
+</div>
+<div class="ov" id="ov"></div>
+<div class="toast" id="toast"></div>
+
+<svg style="display:none">
+  <symbol id="i-dash" viewBox="0 0 24 24"><path d="M4.5 18a9 9 0 1 1 15 0zM12 14l4-5"/><circle cx="12" cy="14" r="1.2"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 5V3h6v2M9 11h6M9 15h4"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="m12 3 4 2.2v4.4L12 12 8 9.6V5.200zM7 12l4 2.200v4.4L7 21l-4-2.400V14.200zM17 12l4 2.200v4.4L17 21l-4-2.400V14.200z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4.500 6v6c0 4.500 3 7.500 7.500 9 4.500-1.500 7.500-4.500 7.500-9V6z"/><path d="m9 12 2.200 2.200L15.200 10"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.500 6.500a4.500 4.500 0 0 1 5.800-1.300l-3 3 .5 2 2 .5 3-3a4.500 4.500 0 0 1-6.300 5.300L8 21.500a2.100 2.100 0 0 1-3-3L13.500 10a4.500 4.500 0 0 1 1-3.500z" transform="translate(-1.500 -1)"/></symbol>
+  <symbol id="i-factory" viewBox="0 0 24 24"><path d="M3 21V10l5 3v-3l5 3V5h4l1 16zM3 21h18M7 17h2M12 17h2"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.500v3M12 18.500v3M2.500 12h3M18.500 12h3M5.300 5.300l2.100 2.100M16.600 16.600l2.100 2.100M5.300 18.700l2.100-2.100M16.600 7.400l2.100-2.100"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.500-3.500"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0 1 12 0v6l1.500 2h-15zM10 21h4"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.500" r="4" fill="currentColor"/><path d="M4 21a8 8 0 0 1 16 0z" fill="currentColor"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12.500 3 3 5-6"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3"/></symbol>
+</svg>
+
+<script>
+(() => {
+const KEY = 'seisan-kanri-demo-v1';
+const DAY0 = 480, DAY1 = 1080;            // 08:00〜18:00
+const LINES = ['L-01','L-02','L-03','L-04','L-05'];
+const OWNER = {'L-01':'田中','L-02':'田中','L-03':'鈴木','L-04':'高橋','L-05':'佐藤'};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const ic = (n, st) => `<svg class="ic"${st?` style="${st}"`:''}><use href="#i-${n}"/></svg>`;
+const hm = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+const toMin = s => { const [h,m] = s.split(':').map(Number); return h*60+m; };
+const nf = n => Math.floor(n).toLocaleString('ja-JP');
+const pct = (a,b) => b ? Math.min(100, a/b*100) : 0;
+
+/* ---------- data ---------- */
+function seed(){
+  const T = (id,line,order,name,start,end,status) => ({id,line,order,name,start,end,status});
+  return {
+    now:780, live:true, speed:1, seq:6, tseq:20, fid:10, fired:{},
+    orders:[
+      {id:'MO-1113-001',product:'シャフトA',line:'L-01',due:'11/13',plan:600,actual:480},
+      {id:'MO-1113-002',product:'ギアB',line:'L-02',due:'11/13',plan:500,actual:300},
+      {id:'MO-1113-003',product:'ケースC',line:'L-03',due:'11/13',plan:400,actual:320},
+      {id:'MO-1113-004',product:'ブラケットD',line:'L-04',due:'11/13',plan:600,actual:540},
+      {id:'MO-1113-005',product:'フランジE',line:'L-05',due:'11/14',plan:300,actual:0},
+    ],
+    tasks:[
+      T('t1','L-01','MO-1113-001','加工',480,660,'done'), T('t2','L-01','MO-1113-001','組立',660,840,'doing'), T('t3','L-01','MO-1113-001','検査',840,960,'plan'),
+      T('t4','L-02','MO-1113-002','加工',480,720,'done'), T('t5','L-02','MO-1113-002','組立',720,900,'delay'),
+      T('t6','L-03','MO-1113-003','成形',540,780,'done'), T('t7','L-03','MO-1113-003','仕上げ',780,1020,'plan'),
+      T('t8','L-04','MO-1113-004','プレス',480,780,'done'), T('t9','L-04','MO-1113-004','検査',780,1020,'plan'),
+      T('t10','L-05',null,'設備点検',480,720,'maint'), T('t11','L-05','MO-1113-005','加工',780,1020,'plan'),
+    ],
+    alerts:[
+      {id:'a1',line:'L-02',kind:'delay',title:'工程遅延',desc:'組立工程が30分遅延',owner:'田中',order:'MO-1113-002',task:'t5',at:750},
+      {id:'a2',line:'L-05',kind:'inspect',title:'点検確認',desc:'加工開始前に点検結果を確認',owner:'佐藤',order:'MO-1113-005',block:true,at:722},
+    ],
+    feed:[
+      {id:4,t:765,x:'L-01 組立 480個完了'},{id:3,t:750,x:'L-03 成形 320個完了'},
+      {id:2,t:722,x:'L-05 設備点検 完了・確認待ち'},{id:1,t:720,x:'L-02 加工 完了'},
+    ],
+    hist:[[480,0],[540,140],[600,400],[660,720],[720,1150],[780,1640]],
+    inv:[
+      {code:'RM-101',name:'S45C 丸鋼 φ30',cat:'原材料',qty:1240,safe:800,unit:'kg',use:'シャフトA'},
+      {code:'RM-102',name:'SCM440 鍛造素材',cat:'原材料',qty:620,safe:500,unit:'個',use:'ギアB'},
+      {code:'RM-203',name:'ABS樹脂ペレット',cat:'原材料',qty:180,safe:250,unit:'kg',use:'ケースC'},
+      {code:'RM-204',name:'SPCC 鋼板 t2.0',cat:'原材料',qty:96,safe:80,unit:'枚',use:'ブラケットD'},
+      {code:'PT-310',name:'ベアリング 6204',cat:'部品',qty:1500,safe:600,unit:'個',use:'シャフトA'},
+      {code:'PT-311',name:'六角ボルト M8×25',cat:'部品',qty:8200,safe:3000,unit:'本',use:'共通'},
+      {code:'PT-320',name:'Oリング P-20',cat:'部品',qty:420,safe:400,unit:'個',use:'フランジE'},
+      {code:'FG-001',name:'シャフトA',cat:'製品',qty:1120,safe:500,unit:'個',use:'出荷待ち'},
+      {code:'FG-002',name:'ギアB',cat:'製品',qty:340,safe:400,unit:'個',use:'出荷待ち'},
+      {code:'FG-003',name:'ケースC',cat:'製品',qty:760,safe:300,unit:'個',use:'出荷待ち'},
+    ],
+    qc:[
+      {t:'12:40',order:'MO-1113-001',product:'シャフトA',item:'外径寸法',n:80,ng:1,by:'山口'},
+      {t:'12:10',order:'MO-1113-004',product:'ブラケットD',item:'外観（キズ・打痕）',n:120,ng:2,by:'小川'},
+      {t:'11:30',order:'MO-1113-003',product:'ケースC',item:'外観（バリ）',n:100,ng:1,by:'山口'},
+      {t:'11:05',order:'MO-1113-002',product:'ギアB',item:'歯形精度',n:60,ng:0,by:'小川'},
+      {t:'10:20',order:'MO-1113-001',product:'シャフトA',item:'表面粗さ',n:80,ng:0,by:'山口'},
+      {t:'09:40',order:'MO-1113-004',product:'ブラケットD',item:'穴位置寸法',n:120,ng:1,by:'小川'},
+      {t:'09:10',order:'MO-1113-003',product:'ケースC',item:'嵌合寸法',n:100,ng:0,by:'山口'},
+    ],
+    equip:[
+      {id:'M-01',name:'NC旋盤 #1',line:'L-01',rate:92,next:'11/20',hours:12480},
+      {id:'M-02',name:'マシニングセンタ #2',line:'L-02',rate:87,next:'11/18',hours:9860},
+      {id:'M-03',name:'射出成形機 #1',line:'L-03',rate:95,next:'11/27',hours:15210},
+      {id:'M-04',name:'プレス機 200t',line:'L-04',rate:90,next:'11/22',hours:18730},
+      {id:'M-05',name:'NC旋盤 #2',line:'L-05',rate:64,next:'12/13',hours:7340},
+      {id:'M-06',name:'組立ロボット',line:'L-01',rate:89,next:'12/02',hours:5120},
+      {id:'M-07',name:'三次元測定機',line:'検査室',rate:78,next:'11/16',hours:3890},
+      {id:'M-08',name:'コンプレッサー',line:'共用',rate:99,next:'12/10',hours:26400},
+    ],
+  };
+}
+let S, memOnly = false;
+let ui = {page:'plan', q:'', view:'day', day:0, line:'all', seenFeed:0, seenAlert:''};
+function load(){
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && d.orders && d.tasks) { S = d; return; } } catch(e){}
+  S = seed(); step();
+}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){ memOnly = true; } }
+
+/* ---------- domain ---------- */
+const ord = id => S.orders.find(o => o.id===id);
+const tasksOf = o => S.tasks.filter(t => t.order===o.id).sort((a,b) => a.start-b.start);
+const active = t => t.status==='doing' || t.status==='delay';
+const openAlerts = () => S.alerts.filter(a => !a.done);
+const blocked = line => openAlerts().some(a => a.block && a.line===line);
+const running = line => S.tasks.some(t => t.line===line && active(t));
+const total = () => S.orders.reduce((s,o) => s+Math.floor(o.actual), 0);
+const planTotal = () => S.orders.reduce((s,o) => s+o.plan, 0);
+function ostat(o){
+  const ts = tasksOf(o);
+  if (ts.some(t => t.status==='delay')) return ['遅延','delay'];
+  if (ts.some(t => t.status==='doing')) return ['作業中','doing'];
+  if (ts.length && ts.every(t => t.status==='done')) return ['完了','done'];
+  return ['予定','plan'];
+}
+const chip = (label, cls) => `<span class="chip c-${cls}">${label}</span>`;
+function feed(x){ S.feed.unshift({id:++S.fid, t:S.now, x}); if (S.feed.length>40) S.feed.length = 40; }
+function startTask(t, manual){
+  if (blocked(t.line)) { if (manual) toast(`${t.line} は点検確認が完了していません`); return false; }
+  if (S.tasks.some(x => x!==t && x.line===t.line && active(x))) { if (manual) toast(`${t.line} は別の工程が作業中です`); return false; }
+  t.status = 'doing'; feed(`${t.line} ${t.name}を開始`); return true;
+}
+function finishTask(t){
+  t.status = 'done'; feed(`${t.line} ${t.name} 完了`);
+  S.alerts.forEach(a => { if (a.task===t.id) a.done = true; });
+  const o = ord(t.order);
+  if (o && tasksOf(o).every(x => x.status==='done')) { o.actual = o.plan; feed(`${o.id} ${o.product} ${nf(o.plan)}個 生産完了`); }
+}
+function step(){
+  [...S.tasks].sort((a,b) => a.start-b.start).forEach(t => {
+    if (active(t) && S.now >= t.end) finishTask(t);
+  });
+  [...S.tasks].sort((a,b) => a.start-b.start).forEach(t => {
+    if (t.status==='plan' && S.now >= t.start) startTask(t);
+  });
+  S.orders.forEach(o => {
+    const ts = tasksOf(o), a = ts.find(active); if (!a) return;
+    const rem = Math.max(1, Math.max(...ts.map(t => t.end)) - S.now);
+    o.actual = Math.min(o.plan - 0.01, o.actual + (o.plan-o.actual)/rem * (a.status==='delay'?.8:1) * (.6+Math.random()*.8));
+  });
+  if (S.now % 30 === 0) {
+    const act = S.tasks.filter(t => active(t) && t.order);
+    if (act.length) { const t = act[(S.now/30) % act.length], o = ord(t.order); feed(`${t.line} ${t.name} ${nf(o.actual)}個完了`); }
+  }
+  if (S.now % 10 === 0) S.hist.push([S.now, total()]);
+  if (S.now >= 796 && !S.fired.stock) {
+    S.fired.stock = 1;
+    S.alerts.push({id:'a3',line:'L-03',kind:'stock',title:'材料残少',desc:'ABS樹脂ペレットが安全在庫を下回りました',owner:'鈴木',item:'RM-203',at:S.now});
+    feed('在庫アラート：ABS樹脂ペレット 残り少');
+  }
+  if (S.now >= DAY1) { S.now = DAY1; S.live = false; }
+}
+
+/* ---------- charts ---------- */
+function ring(v, color){
+  const c = 2*Math.PI*30;
+  return `<svg class="ring" viewBox="0 0 78 78" width="78" height="78"><circle cx="39" cy="39" r="30" fill="none" stroke="#e4e7e6" stroke-width="8"/><circle cx="39" cy="39" r="30" fill="none" stroke="${color||'#1f8a4c'}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${c*v/100} ${c}" transform="rotate(-90 39 39)"/><text x="39" y="44" text-anchor="middle">${v}%</text></svg>`;
+}
+function cumChart(){
+  const W=640,H=230,L=44,R=14,T=12,B=26, pt = planTotal(), max = Math.max(600, Math.ceil(pt/600)*600);
+  const x = m => L+(m-DAY0)/(DAY1-DAY0)*(W-L-R), y = v => H-B-v/max*(H-T-B);
+  const pts = [...S.hist.filter(h => h[0]<S.now), [S.now,total()]];
+  const line = pts.map(p => `${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' ');
+  let g = '';
+  for (let v=0; v<=max; v+=max/4) g += `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="#e9edeb"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end">${nf(v)}</text>`;
+  for (let m=DAY0; m<=DAY1; m+=120) g += `<text x="${x(m)}" y="${H-6}" text-anchor="middle">${hm(m)}</text>`;
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}">${g}
+    <polyline points="${x(480)},${y(0)} ${x(1020)},${y(pt)} ${x(1080)},${y(pt)}" fill="none" stroke="#aab3ae" stroke-width="2" stroke-dasharray="5 5"/>
+    <polygon points="${x(480)},${y(0)} ${line} ${x(S.now)},${y(0)}" fill="#1f8a4c" opacity=".14"/>
+    <polyline points="${line}" fill="none" stroke="#1f8a4c" stroke-width="3" stroke-linejoin="round"/>
+    <line x1="${x(S.now)}" x2="${x(S.now)}" y1="${T}" y2="${H-B}" stroke="#1f8a4c" stroke-dasharray="3 3"/>
+    <circle cx="${x(S.now)}" cy="${y(total())}" r="5" fill="#fff" stroke="#1f8a4c" stroke-width="3"/></svg>`;
+}
+function weekChart(){
+  const W=420,H=230,L=40,B=26,T=12, days=['11/9 月','11/10 火','11/11 水','11/12 木','11/13 金','11/14 土','11/15 日'];
+  const plan=[2200,2300,2400,2300,planTotal(),1200,0], act=[2150,2310,2280,2190,total(),null,null], max=2800;
+  const bw=(W-L-8)/7, y=v=>H-B-v/max*(H-T-B);
+  let g='';
+  for (let v=0; v<=max; v+=700) g += `<line x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="#e9edeb"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${nf(v)}</text>`;
+  days.forEach((d,i) => { const x0=L+i*bw+6, w=(bw-14)/2;
+    g += `<rect x="${x0}" y="${y(plan[i])}" width="${w}" height="${H-B-y(plan[i])}" rx="2" fill="#cfd5d2"/>`;
+    if (act[i]!=null) g += `<rect x="${x0+w+2}" y="${y(act[i])}" width="${w}" height="${H-B-y(act[i])}" rx="2" fill="${i===4?'#1f8a4c':'#8fcf9b'}"/>`;
+    g += `<text x="${x0+w}" y="${H-8}" text-anchor="middle" ${i===4?'font-weight="700" style="fill:#16211c"':''}>${d}</text>`; });
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}">${g}</svg>`;
+}
+function trendChart(today){
+  const W=640,H=200,L=40,B=26,T=14, v=[0.82,0.74,0.91,0.68,today], lb=['11/9','11/10','11/11','11/12','11/13'], max=1.5;
+  const x=i=>L+30+i*(W-L-60)/4, y=n=>H-B-n/max*(H-T-B);
+  let g='';
+  for (let n=0;n<=max;n+=.5) g += `<line x1="${L}" x2="${W}" y1="${y(n)}" y2="${y(n)}" stroke="#e9edeb"/><text x="${L-6}" y="${y(n)+4}" text-anchor="end">${n.toFixed(1)}%</text>`;
+  g += `<line x1="${L}" x2="${W}" y1="${y(1)}" y2="${y(1)}" stroke="#d9443f" stroke-dasharray="5 4"/><text x="${W-4}" y="${y(1)-5}" text-anchor="end" style="fill:#d9443f">管理基準 1.0%</text>`;
+  g += `<polyline points="${v.map((n,i)=>`${x(i)},${y(n)}`).join(' ')}" fill="none" stroke="#1f8a4c" stroke-width="3"/>`;
+  v.forEach((n,i) => g += `<circle cx="${x(i)}" cy="${y(n)}" r="5" fill="#fff" stroke="#1f8a4c" stroke-width="3"/><text x="${x(i)}" y="${y(n)-11}" text-anchor="middle" style="fill:#16211c;font-weight:700">${n.toFixed(2)}%</text><text x="${x(i)}" y="${H-8}" text-anchor="middle">${lb[i]}</text>`);
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}">${g}</svg>`;
+}
+
+/* ---------- shared blocks ---------- */
+function kpis(){
+  const t = total(), p = planTotal(), run = LINES.filter(running).length, al = openAlerts().length;
+  return `<div class="kpis">
+    <div class="card kpi"><div class="lb">本日の計画</div><div class="v num">${nf(p)}<small>個</small></div></div>
+    <div class="card kpi"><div class="lb">生産実績</div><div class="v num">${nf(t)}<small>個</small></div><div class="rate">達成率 <b class="num">${pct(t,p).toFixed(1)}%</b></div><div class="track"><i style="width:${pct(t,p)}%"></i></div></div>
+    <div class="card kpi"><div class="lb">稼働ライン</div><div class="v num">${run} <em>/ ${LINES.length}</em></div></div>
+    <div class="card kpi"><div class="lb">要対応 ${al?'<span class="dotw"></span>':''}</div><div class="v num">${al}<small>件</small></div></div>
+  </div>`;
+}
+function alertsCard(){
+  const al = openAlerts();
+  const h = al.length ? al.map(a => `<div class="alert ${ui.seenAlert.includes(a.id)?'':'new'}" data-act="alert" data-id="${a.id}">
+      <span class="ai">${a.kind==='inspect'?ic('wrench','width:22px;height:22px'):'<span class="dotw"></span>'}</span>
+      <b>${a.line}<i>|</i>${a.title}</b><p>${esc(a.desc)}</p><small>担当：${a.owner}<a>詳細を見る →</a></small></div>`).join('')
+    : `<div class="none">${ic('check')}対応が必要な項目はありません</div>`;
+  ui.seenAlert = S.alerts.map(a => a.id).join(',');
+  return `<section class="card acard"><h2>対応が必要 ${al.length?`<span class="cnt num">${al.length}</span>`:''}</h2>${h}</section>`;
+}
+function feedCard(max){
+  const h = S.feed.slice(0, max||30).map(f => `<div class="fi ${f.id>ui.seenFeed?'new':''}"><time class="num">${hm(f.t)}</time>${esc(f.x)}</div>`).join('');
+  ui.seenFeed = S.feed[0] ? S.feed[0].id : 0;
+  return `<section class="card fcard"><h2>現場からの更新</h2><div class="feed">${h}</div></section>`;
+}
+function matchQ(o){ const q = ui.q.trim().toLowerCase(); return !q || (o.id+' '+o.product+' '+o.line).toLowerCase().includes(q); }
+function ordersTable(){
+  const rows = S.orders.filter(matchQ).map(o => { const st = ostat(o), p = pct(Math.floor(o.actual), o.plan);
+    return `<tr data-act="order" data-id="${o.id}"><td class="num">${o.id}</td><td>${esc(o.product)}</td><td class="num">${o.due}</td><td class="num r">${nf(o.plan)}</td><td class="num r">${nf(o.actual)}</td>
+      <td><div class="prog"><div class="track ${st[1]==='delay'?'delay':''}"><i style="width:${p}%"></i></div><span class="num">${Math.floor(p)}%</span></div></td><td>${chip(st[0],st[1])}</td></tr>`; }).join('');
+  return `<table class="t"><thead><tr><th>指示番号</th><th>製品名</th><th>納期</th><th class="r">計画数</th><th class="r">実績</th><th>進捗</th><th>状態</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:#647069;padding:26px">該当する生産指示がありません</td></tr>'}</tbody></table>`;
+}
+
+/* ---------- gantt ---------- */
+function dayTasks(){
+  if (ui.day===0) return S.tasks;
+  return seed().tasks.filter(t => ui.day<0 || t.status!=='maint').map(t => ({...t, status: t.status==='maint'?'maint':(ui.day<0?'done':'plan')}));
+}
+function gantt(){
+  const span = DAY1-DAY0, X = m => (Math.max(DAY0,Math.min(DAY1,m))-DAY0)/span*100, tasks = dayTasks(), nowX = X(S.now);
+  const hit = new Set(S.orders.filter(matchQ).map(o => o.line));
+  const lines = LINES.filter(l => (ui.line==='all'||ui.line===l) && (!ui.q.trim() || hit.has(l)));
+  const sh = -(Date.now()%2600);
+  let h = `<div class="grow hd"><div class="gc">ライン</div><div class="gc">製品 / 指示数</div><div><div class="tl">
+    ${[0,1,2,3,4,5].map(i => `<span class="tick num" style="left:${i*20}%">${hm(DAY0+i*120)}</span>`).join('')}
+    ${ui.day===0?`<span class="nowtag num" style="left:${nowX}%">現在 ${hm(S.now)}</span><i class="nowline" style="left:${nowX}%;top:24px"></i>`:''}</div></div></div>`;
+  lines.forEach(l => {
+    const ts = tasks.filter(t => t.line===l).sort((a,b) => a.start-b.start), ends = [];
+    ts.forEach(t => { let k = ends.findIndex(e => e<=t.start); if (k<0) k = ends.length; ends[k] = t.end; t._lane = k; });
+    const os = S.orders.filter(o => o.line===l), lanes = Math.max(1, ends.length);
+    h += `<div class="grow" style="height:${lanes*44+8}px"><div class="gc ln">${l}</div><div class="gc">${os.length?`${esc(os[0].product)} / ${nf(os[0].plan)}個${os.length>1?` <small style="color:#647069;margin-left:6px">+${os.length-1}</small>`:''}`:'—'}</div>
+      <div><div class="grid-lines"></div><div class="tl">${ts.map(t => {
+        const lab = t.status==='delay' ? `${t.name}・30分遅延` : t.name;
+        return `<div class="bar ${t.status}" data-act="task" data-id="${t.id}" title="${l} ${esc(lab)} ${hm(t.start)}–${hm(t.end)}" style="left:${X(t.start)}%;width:calc(${X(t.end)-X(t.start)}% - 3px);top:${4+t._lane*44}px;${t.status==='doing'?`animation-delay:${sh}ms`:''}"><b>${esc(lab)}</b><span class="num">${hm(t.start)} – ${hm(t.end)}</span></div>`; }).join('')}
+        ${ui.day===0?`<i class="nowline" style="left:${nowX}%"></i>`:''}</div></div></div>`;
+  });
+  if (!lines.length) h += `<div class="none" style="border-top:1px solid var(--line)">該当するラインがありません</div>`;
+  return `<div class="gantt">${h}</div>
+    <div class="legend"><span><i style="background:var(--gl)"></i>完了</span><span><i style="background:var(--g)"></i>作業中</span><span><i style="background:var(--plan)"></i>予定</span><span><i style="background:var(--delay);border:2px solid var(--delayb)"></i>遅延</span><span><i style="background:repeating-linear-gradient(135deg,#e3e6e4 0 5px,#cfd4d1 5px 8px)"></i>設備点検</span></div>`;
+}
+function weekView(){
+  const days = ['11/9（月）','11/10（火）','11/11（水）','11/12（木）','11/13（金）','11/14（土）','11/15（日）'], rate = [1,1.05,1.1,1.05,1,.5,0];
+  let h = `<div class="wh">ライン</div>` + days.map((d,i) => `<div class="wh ${i===4?'today':''}">${d}</div>`).join('');
+  LINES.filter(l => ui.line==='all'||ui.line===l).forEach(l => {
+    const o = S.orders.find(x => x.line===l);
+    h += `<div class="gc ln" style="font-size:15px">${l}</div>` + days.map((d,i) => {
+      if (!o || !rate[i]) return `<div class="${i===4?'today':''}" style="color:#98a39d;display:grid;place-items:center">${rate[i]?'—':'休'}</div>`;
+      const q = i===4 ? o.plan : Math.round(o.plan*rate[i]/50)*50, bg = i<4?'var(--gl)':i===4?'var(--g)':'var(--plan)';
+      return `<div class="${i===4?'today':''}"><div class="wk" style="background:${bg};${i===4?'color:#fff':''}"><b>${esc(o.product)}</b><span class="num">${nf(q)}個 ${i<4?'・完了':i===4?`・${Math.floor(pct(o.actual,o.plan))}%`:'・予定'}</span></div></div>`; }).join('');
+  });
+  return `<div class="week">${h}</div>`;
+}
+
+/* ---------- pages ---------- */
+const NAV = [['dash','dash','ダッシュボード'],['plan','cal','生産計画'],['work','clip','作業指示'],['stock','box','在庫管理'],['quality','shield','品質管理'],['equip','wrench','設備管理']];
+const head = (title, acts) => `<div class="ph"><div><h1>${title}</h1><p>2026年11月13日（金）</p></div><div class="acts">${acts||''}</div></div>`;
+const foot = () => `<div class="foot num">最終更新 ${hm(S.now)}${memOnly?'　（このタブ内のみ保存）':''}</div>`;
+const addBtn = `<button class="btn primary" data-act="add">${ic('plus','width:24px;height:24px;stroke-width:2.4')}生産指示を追加</button>`;
+
+const PAGES = {
+plan(){
+  return head('生産計画', `<button class="btn ghost" data-act="csv">${ic('dl','width:24px;height:24px')}CSV出力</button>${addBtn}`) + kpis() + `
+  <div class="cols">
+    <section class="card gcard"><div class="ghd"><h2>ライン別 生産スケジュール</h2>
+      <select class="sel" id="daysel"><option value="-1">11/12（木）</option><option value="0">11/13（金）</option><option value="1">11/14（土）</option></select>
+      <div class="seg"><button data-act="view" data-v="day" class="${ui.view==='day'?'on':''}">日</button><button data-act="view" data-v="week" class="${ui.view==='week'?'on':''}">週</button></div>
+      <select class="sel" id="linesel"><option value="all">全ライン</option>${LINES.map(l => `<option>${l}</option>`).join('')}</select></div>
+      ${ui.view==='day' ? gantt() : weekView()}</section>
+    <div class="rcol">${alertsCard()}${feedCard()}</div>
+  </div>
+  <section class="card tcard"><div class="hd"><h2>進行中の生産指示</h2><a data-act="go" data-p="work">すべて見る →</a></div>${ordersTable()}</section>` + foot();
+},
+dash(){
+  const t = total(), p = planTotal(), qn = S.qc.reduce((s,r) => s+r.n,0), qg = S.qc.reduce((s,r) => s+r.ng,0);
+  return head('ダッシュボード', addBtn) + `<div class="g4">
+    <div class="card kpi"><div class="lb">達成率</div><div class="v num">${pct(t,p).toFixed(1)}<small>%</small></div><div class="track"><i style="width:${pct(t,p)}%"></i></div></div>
+    <div class="card kpi"><div class="lb">生産実績 / 計画</div><div class="v num">${nf(t)} <em>/ ${nf(p)}</em></div></div>
+    <div class="card kpi"><div class="lb">不良率</div><div class="v num">${(qg/qn*100).toFixed(2)}<small>%</small></div></div>
+    <div class="card kpi"><div class="lb">要対応 ${openAlerts().length?'<span class="dotw"></span>':''}</div><div class="v num">${openAlerts().length}<small>件</small></div></div></div>
+  <div class="g2"><section class="card pcard"><h2>本日の累計生産数<small><span><i style="background:#1f8a4c"></i>実績</span><span><i style="background:#aab3ae"></i>計画</span></small></h2>${cumChart()}</section>
+    <section class="card pcard"><h2>週間 生産実績<small><span><i style="background:#8fcf9b"></i>実績</span><span><i style="background:#cfd5d2"></i>計画</span></small></h2>${weekChart()}</section></div>
+  <div class="g2"><section class="card pcard"><h2>ライン別 進捗</h2>${LINES.map(l => { const os = S.orders.filter(o => o.line===l), a = os.reduce((s,o) => s+Math.floor(o.actual),0), pl = os.reduce((s,o) => s+o.plan,0);
+      const st = blocked(l)?['確認待ち','warn']:running(l)?(S.tasks.some(x => x.line===l&&x.status==='delay')?['遅延','delay']:['稼働中','doing']):['待機','plan'];
+      return `<div class="lrow"><b>${l}</b><span>${esc(os.map(o => o.product).join('・')||'—')}</span><div class="track ${st[1]==='delay'?'delay':''}"><i style="width:${pct(a,pl)}%"></i></div><span class="num r">${Math.floor(pct(a,pl))}%</span>${chip(st[0],st[1])}</div>`; }).join('')}</section>
+    <div class="rcol">${alertsCard()}${feedCard(8)}</div></div>` + foot();
+},
+work(){
+  const cols = [['未着手', t => t.status==='plan'],['作業中', active],['完了', t => t.status==='done'||t.status==='maint']];
+  const q = ui.q.trim().toLowerCase();
+  const ts = [...S.tasks].sort((a,b) => a.start-b.start).filter(t => { const o = ord(t.order); return !q || (t.line+' '+t.name+' '+(o?o.id+o.product:'')).toLowerCase().includes(q); });
+  return head('作業指示', addBtn) + `<div class="kan">${cols.map(c => { const list = ts.filter(c[1]);
+    return `<div class="kcol"><h3>${c[0]}<span class="num">${list.length}</span></h3>${list.map(t => { const o = ord(t.order);
+      return `<div class="kc ${t.status}"><div class="top"><b>${t.line}</b><span class="num">${hm(t.start)} – ${hm(t.end)}</span>${t.status==='delay'?chip('30分遅延','delay'):''}</div>
+        <h4>${o?esc(o.product)+' ・ ':''}${esc(t.name)}</h4><p>${o?`${o.id}　計画 ${nf(o.plan)}個　`:''}担当：${OWNER[t.line]}</p>
+        ${active(t)&&o?`<div class="bt"><div class="track ${t.status==='delay'?'delay':''}"><i style="width:${pct(o.actual,o.plan)}%"></i></div><span class="num">${nf(o.actual)} / ${nf(o.plan)}</span><button class="btn sm primary" data-act="tdone" data-id="${t.id}">完了</button></div>`:''}
+        ${t.status==='plan'?`<div class="bt"><span style="flex:1;font-size:12px;color:#a0660a">${blocked(t.line)?'点検確認待ち':''}</span><button class="btn sm ghost" data-act="tstart" data-id="${t.id}">${ic('play')}開始</button></div>`:''}</div>`; }).join('') || '<div class="none">なし</div>'}</div>`; }).join('')}</div>` + foot();
+},
+stock(){
+  const st = i => i.qty<i.safe ? (i.ordered?['発注済','doing']:['要発注','ng']) : i.qty<i.safe*1.15 ? ['注意','warn'] : ['適正','done'];
+  const low = S.inv.filter(i => i.qty<i.safe);
+  return head('在庫管理') + `<div class="g4">
+    <div class="card kpi"><div class="lb">管理品目</div><div class="v num">${S.inv.length}<small>品目</small></div></div>
+    <div class="card kpi"><div class="lb">要発注 ${low.some(i=>!i.ordered)?'<span class="dotw"></span>':''}</div><div class="v num">${low.filter(i=>!i.ordered).length}<small>品目</small></div></div>
+    <div class="card kpi"><div class="lb">発注済・入荷待ち</div><div class="v num">${S.inv.filter(i=>i.ordered).length}<small>品目</small></div></div>
+    <div class="card kpi"><div class="lb">安全在庫 充足率</div><div class="v num">${Math.round((1-low.length/S.inv.length)*100)}<small>%</small></div></div></div>
+  <section class="card tcard"><div class="hd"><h2>在庫一覧</h2></div><table class="t"><thead><tr><th>品目コード</th><th>品名</th><th>区分</th><th>使用先</th><th class="r">在庫数</th><th class="r">安全在庫</th><th>在庫水準</th><th>状態</th><th></th></tr></thead><tbody>
+    ${S.inv.map(i => { const s = st(i); return `<tr style="cursor:default"><td class="num">${i.code}</td><td><b>${esc(i.name)}</b></td><td>${i.cat}</td><td>${i.use}</td><td class="num r">${nf(i.qty)} ${i.unit}</td><td class="num r">${nf(i.safe)} ${i.unit}</td>
+      <td><div class="stockbar ${s[1]==='ng'||s[1]==='doing'?'low':s[1]==='warn'?'warn':''}"><i style="width:${Math.min(100,i.qty/(i.safe*2)*100)}%"></i><u></u></div></td><td>${chip(s[0],s[1])}</td>
+      <td style="white-space:nowrap;text-align:right">${i.qty<i.safe&&!i.ordered?`<button class="btn sm primary" data-act="reorder" data-id="${i.code}">発注</button> `:''}<button class="btn sm plain" data-act="inv" data-id="${i.code}" data-d="1">入庫</button> <button class="btn sm plain" data-act="inv" data-id="${i.code}" data-d="-1">出庫</button></td></tr>`; }).join('')}
+  </tbody></table></section>` + foot();
+},
+quality(){
+  const n = S.qc.reduce((s,r) => s+r.n,0), ng = S.qc.reduce((s,r) => s+r.ng,0), rate = ng/n*100;
+  const par = [['キズ',14],['寸法不良',9],['バリ',6],['打痕',4],['その他',2]];
+  return head('品質管理', `<button class="btn primary" data-act="qcadd">${ic('plus','width:24px;height:24px;stroke-width:2.4')}検査記録を追加</button>`) + `<div class="g4">
+    <div class="card kpi"><div class="lb">本日の不良率</div><div class="v num">${rate.toFixed(2)}<small>%</small></div></div>
+    <div class="card kpi"><div class="lb">検査数</div><div class="v num">${nf(n)}<small>個</small></div></div>
+    <div class="card kpi"><div class="lb">不良数 ${rate>1?'<span class="dotw"></span>':''}</div><div class="v num">${ng}<small>個</small></div></div>
+    <div class="card kpi"><div class="lb">直行率</div><div class="v num">${(100-rate).toFixed(1)}<small>%</small></div></div></div>
+  <div class="g2"><section class="card pcard"><h2>不良率の推移（今週）</h2>${trendChart(rate)}</section>
+    <section class="card pcard"><h2>不良内容の内訳（今週）</h2><div class="pareto">${par.map(p => `<div><span>${p[0]}</span><i style="width:${p[1]/14*100}%"></i><b class="num">${p[1]}件</b></div>`).join('')}</div></section></div>
+  <section class="card tcard"><div class="hd"><h2>本日の検査記録</h2></div><table class="t"><thead><tr><th>時刻</th><th>指示番号</th><th>製品名</th><th>検査項目</th><th class="r">検査数</th><th class="r">不良数</th><th>判定</th><th>検査員</th></tr></thead><tbody>
+    ${S.qc.map(r => `<tr style="cursor:default"><td class="num">${r.t}</td><td class="num">${r.order}</td><td>${esc(r.product)}</td><td>${esc(r.item)}</td><td class="num r">${r.n}</td><td class="num r">${r.ng}</td><td>${r.ng/r.n>0.02?chip('要確認','ng'):chip('合格','done')}</td><td>${esc(r.by)}</td></tr>`).join('')}
+  </tbody></table></section>` + foot();
+},
+equip(){
+  return head('設備管理') + `<div class="g4" style="margin-bottom:0">${S.equip.map(e => {
+    const isLine = LINES.includes(e.line), st = isLine ? (blocked(e.line)?['確認待ち','warn']:running(e.line)?['稼働中','doing']:['待機中','plan']) : ['稼働中','doing'];
+    const soon = ['11/13','11/14','11/15','11/16'].includes(e.next);
+    return `<section class="card eq"><div><h3>${esc(e.name)}</h3><p>${e.id} ・ ${e.line}</p><div style="margin-top:8px">${chip(st[0],st[1])}</div></div>${ring(e.rate, e.rate<70?'#e8a013':'')}
+      <dl><div><dt>次回点検</dt><dd class="num" ${soon?'style="color:#a0660a"':''}>${e.next}${soon?' ⚠':''}</dd></div><div><dt>累計稼働</dt><dd class="num">${nf(e.hours)} h</dd></div></dl>
+      <button class="btn sm ${soon?'primary':'plain'}" data-act="maint" data-id="${e.id}">${ic('wrench')}点検を記録</button></section>`; }).join('')}</div>` + foot();
+},
+};
+
+function render(force){
+  const pg = $('#page'), ae = document.activeElement;
+  if (!force && pg.contains(ae) && /SELECT|INPUT/.test(ae.tagName)) { chrome(); return; }
+  const st = pg.scrollTop, fs = pg.querySelector('.feed')?.scrollTop;
+  pg.innerHTML = PAGES[ui.page]();
+  pg.scrollTop = st; if (fs) pg.querySelector('.feed').scrollTop = fs;
+  const d = $('#daysel'), l = $('#linesel'); if (d) d.value = ui.day; if (l) l.value = ui.line;
+  chrome();
+}
+function chrome(){
+  $('#nav').innerHTML = NAV.map(n => `<button data-act="go" data-p="${n[0]}" class="${ui.page===n[0]?'on':''}">${ic(n[1])}${n[2]}</button>`).join('');
+  $('#crumb').textContent = NAV.find(n => n[0]===ui.page)[2];
+  $('#live').classList.toggle('on', S.live);
+  $('#livetxt').textContent = (S.live?'LIVE ':'停止中 ') + hm(S.now);
+  $('#speed').textContent = '×' + S.speed;
+  const al = openAlerts();
+  $('#belldot').style.display = al.length ? '' : 'none';
+  $('#bellmenu').innerHTML = `<h4>通知</h4>` + (al.length ? al.map(a => `<button data-act="alert" data-id="${a.id}"><b>${a.line}｜${a.title}</b>${esc(a.desc)}</button>`).join('') : '<p>新しい通知はありません</p>');
+}
+
+/* ---------- modal / toast ---------- */
+let toastT;
+function toast(msg, label, fn){
+  const t = $('#toast'); t.innerHTML = `<span>${esc(msg)}</span>${label?`<button>${label}</button>`:''}`;
+  if (label) t.querySelector('button').onclick = () => { fn(); t.classList.remove('show'); };
+  t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), label?6000:2600);
+}
+function modal(title, body, footer, w){
+  $('#ov').innerHTML = `<div class="modal" style="${w?`width:${w}px`:''}"><header><h3>${title}</h3><button class="x" data-act="close">${ic('x')}</button></header><div class="mb">${body}</div><footer>${footer}</footer></div>`;
+  $('#ov').classList.add('show');
+}
+const closeModal = () => { $('#ov').classList.remove('show'); $('#ov').innerHTML = ''; };
+const commit = (msg) => { save(); render(true); if (msg) toast(msg); };
+
+function orderModal(id){
+  const o = ord(id); if (!o) return;
+  const st = ostat(o), ts = tasksOf(o);
+  modal(`${o.id}　${esc(o.product)} ${chip(st[0],st[1])}`, `
+    <dl class="dl"><div><dt>ライン</dt><dd>${o.line}</dd></div><div><dt>納期</dt><dd class="num">${o.due}</dd></div><div><dt>計画数</dt><dd class="num">${nf(o.plan)}</dd></div><div><dt>実績</dt><dd class="num">${nf(o.actual)}</dd></div></dl>
+    <div class="prog"><div class="track ${st[1]==='delay'?'delay':''}" style="flex:1;width:auto"><i style="width:${pct(o.actual,o.plan)}%"></i></div><span class="num">${Math.floor(pct(o.actual,o.plan))}%</span></div>
+    <div class="steps">${ts.map(t => `<div><b>${esc(t.name)}</b><span class="num">${hm(t.start)} – ${hm(t.end)}</span>${chip({done:'完了',doing:'作業中',delay:'遅延',plan:'予定'}[t.status], t.status)}
+      ${t.status==='plan'?`<button class="btn sm ghost" data-act="tstart" data-id="${t.id}" data-m="1">開始</button>`:active(t)?`<button class="btn sm primary" data-act="tdone" data-id="${t.id}" data-m="1">完了</button>`:'<span style="width:58px;margin:0"></span>'}</div>`).join('')}</div>
+    <div class="inline"><label>実績数を入力<input type="number" id="actin" min="0" max="${o.plan}" value="${Math.floor(o.actual)}"></label><button class="btn plain" style="height:42px;font-size:14px" data-act="setact" data-id="${o.id}">実績を更新</button></div>`,
+    `<button class="btn danger sm l" style="height:40px" data-act="odel" data-id="${o.id}">${ic('trash')}この指示を削除</button><button class="btn plain sm" style="height:40px" data-act="close">閉じる</button>`);
+}
+function alertModal(id){
+  const a = S.alerts.find(x => x.id===id); if (!a) return;
+  $('#bellmenu').classList.remove('show');
+  let body = `<dl class="dl"><div><dt>ライン</dt><dd>${a.line}</dd></div><div><dt>種別</dt><dd style="font-size:15px">${a.title}</dd></div><div><dt>担当</dt><dd style="font-size:15px">${a.owner}</dd></div><div><dt>発生</dt><dd class="num">${hm(a.at)}</dd></div></dl>`, btn = '';
+  if (a.kind==='delay') { body += `<div class="note"><b>組立工程が計画より30分遅れています。</b><br>原因：前工程（加工）からの仕掛品の受け渡し遅れ。<br>このままの場合、完了見込みは 15:00（当初 14:30）です。</div>`;
+    btn = `<button class="btn primary sm" style="height:40px" data-act="a-help" data-id="${a.id}">応援要員を配置して回復</button>`; }
+  if (a.kind==='inspect') { body += `<div class="note g"><b>NC旋盤 #2 の定期点検が 12:00 に完了しています。</b><br>・主軸振れ：0.004mm（基準 0.010mm 以内）<b> 合格</b><br>・潤滑油量 / 油圧：<b>正常</b><br>・チャック把握力：<b>正常</b><br>承認すると L-05 の加工（フランジE / 300個）を開始できます。</div>`;
+    btn = `<button class="btn primary sm" style="height:40px" data-act="a-approve" data-id="${a.id}">点検結果を承認して加工開始</button>`; }
+  if (a.kind==='stock') { const i = S.inv.find(x => x.code===a.item);
+    body += `<div class="note"><b>${esc(i.name)} の在庫が安全在庫を下回りました。</b><br>現在庫：${nf(i.qty)} ${i.unit}　／　安全在庫：${nf(i.safe)} ${i.unit}<br>ケースC（L-03）の明日以降の生産に影響する可能性があります。</div>`;
+    btn = `<button class="btn primary sm" style="height:40px" data-act="a-order" data-id="${a.id}">500${i.unit} を発注する</button>`; }
+  modal(`${a.line}｜${a.title}`, body, `<button class="btn plain sm l" style="height:40px" data-act="a-ack" data-id="${a.id}">確認済みにする</button>${btn}`);
+}
+function addModal(){
+  const st = Math.min(1020, Math.ceil(S.now/30)*30);
+  modal('生産指示を追加', `<div class="fg">
+    <label class="w">製品名<input id="f-prod" list="prods" placeholder="例：シャフトB" autocomplete="off"><datalist id="prods">${['シャフトA','シャフトB','ギアB','ケースC','ブラケットD','フランジE','カバーF'].map(p => `<option value="${p}">`).join('')}</datalist></label>
+    <label>ライン<select id="f-line">${LINES.map(l => `<option>${l}</option>`).join('')}</select></label>
+    <label>計画数（個）<input id="f-plan" type="number" min="1" value="200"></label>
+    <label>工程<select id="f-name">${['加工','組立','成形','プレス','仕上げ','検査'].map(n => `<option>${n}</option>`).join('')}</select></label>
+    <label>納期<select id="f-due"><option>11/13</option><option>11/14</option><option>11/16</option><option>11/17</option></select></label>
+    <label>開始時刻<input id="f-st" type="time" step="900" min="08:00" max="18:00" value="${hm(st)}"></label>
+    <label>終了時刻<input id="f-en" type="time" step="900" min="08:00" max="18:00" value="${hm(Math.min(DAY1, st+60))}"></label></div>`,
+    `<button class="btn plain sm" style="height:40px" data-act="close">キャンセル</button><button class="btn primary sm" style="height:40px" data-act="addsave">${ic('plus')}追加する</button>`);
+  $('#f-prod').focus();
+}
+function exportCsv(){
+  const rows = [['指示番号','製品名','ライン','納期','計画数','実績','進捗(%)','状態'], ...S.orders.map(o => [o.id,o.product,o.line,o.due,o.plan,Math.floor(o.actual),Math.floor(pct(o.actual,o.plan)),ostat(o)[0]])];
+  const csv = '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = '生産計画_20261113.csv'; a.click();
+  toast(`${S.orders.length} 件の生産指示をCSVに出力しました`);
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  if (!e.target.closest('.bell,.menu')) $('#bellmenu').classList.remove('show');
+  if (e.target.id==='ov') return closeModal();
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const a = el.dataset.act, id = el.dataset.id, task = S.tasks.find(t => t.id===id), al = S.alerts.find(x => x.id===id);
+  switch (a) {
+    case 'go': ui.page = el.dataset.p; $('#page').scrollTop = 0; render(true); break;
+    case 'view': ui.view = el.dataset.v; render(true); break;
+    case 'live': S.live = !S.live; if (S.live && S.now>=DAY1) { S.live = false; toast('本日の稼働時間は終了しました。設定からリセットできます'); } commit(); break;
+    case 'speed': S.speed = {1:5,5:20,20:1}[S.speed]; setTimer(); commit(S.speed>1?`デモ時間を ${S.speed} 倍速で進めます`:'通常速度に戻しました'); break;
+    case 'bell': $('#bellmenu').classList.toggle('show'); break;
+    case 'close': closeModal(); break;
+    case 'csv': exportCsv(); break;
+    case 'add': addModal(); break;
+    case 'order': orderModal(id); break;
+    case 'alert': alertModal(id); break;
+    case 'task': if (ui.day!==0) toast('当日以外の計画は参照のみです'); else if (task.order) orderModal(task.order); else toast(`${task.line} ${task.name}（${hm(task.start)}–${hm(task.end)}）`); break;
+    case 'tstart': if (startTask(task, true)) { commit(`${task.line} ${task.name}を開始しました`); if (el.dataset.m) orderModal(task.order); } break;
+    case 'tdone': finishTask(task); commit(`${task.line} ${task.name}を完了にしました`); if (el.dataset.m) orderModal(task.order); break;
+    case 'setact': { const o = ord(id), v = Math.max(0, Math.min(o.plan, Number($('#actin').value)||0)); o.actual = v; feed(`${o.line} ${o.product} 実績 ${nf(v)}個に更新`); commit('実績を更新しました'); orderModal(id); break; }
+    case 'odel': { const o = ord(id), snap = JSON.stringify(S);
+      S.orders = S.orders.filter(x => x!==o); S.tasks = S.tasks.filter(t => t.order!==id); S.alerts = S.alerts.filter(x => x.order!==id);
+      closeModal(); save(); render(true);
+      toast(`${id}（${o.product}）を削除しました`, '元に戻す', () => { const now = S.now; S = JSON.parse(snap); S.now = Math.max(S.now, now); commit(); }); break; }
+    case 'addsave': {
+      const prod = $('#f-prod').value.trim(), plan = parseInt($('#f-plan').value,10), s = toMin($('#f-st').value||'0:0'), en = toMin($('#f-en').value||'0:0');
+      if (!prod) return toast('製品名を入力してください');
+      if (!(plan>0)) return toast('計画数を入力してください');
+      if (!(s>=DAY0 && en<=DAY1 && en>s)) return toast('時刻は 08:00〜18:00 の範囲で、終了を開始より後にしてください');
+      const oid = `MO-1113-${String(S.seq++).padStart(3,'0')}`, line = $('#f-line').value;
+      S.orders.push({id:oid, product:prod, line, due:$('#f-due').value, plan, actual:0});
+      S.tasks.push({id:'t'+(S.tseq++), line, order:oid, name:$('#f-name').value, start:s, end:en, status:'plan'});
+      feed(`${oid} ${prod} ${nf(plan)}個 を ${line} に追加`);
+      closeModal(); ui.day = 0; ui.q = ''; $('#q').value = ''; if (ui.line!=='all') ui.line = line;
+      commit(`生産指示 ${oid} を追加しました`); break; }
+    case 'a-ack': al.done = true; closeModal(); commit('確認済みにしました'); break;
+    case 'a-help': { al.done = true; const t = S.tasks.find(x => x.id===al.task); if (t && t.status==='delay') t.status = 'doing'; feed(`${al.line} 応援要員を配置、遅延を回復見込み`); closeModal(); commit('応援要員を配置しました'); break; }
+    case 'a-approve': al.done = true; feed(`${al.line} 点検結果を承認（${al.owner}）`); step(); closeModal(); commit(`${al.line} の加工を開始しました`); break;
+    case 'a-order': case 'reorder': { const i = S.inv.find(x => x.code===(a==='reorder'?id:al.item)); i.ordered = true; S.alerts.forEach(x => { if (x.item===i.code) x.done = true; }); feed(`${i.name} を発注（入荷予定 11/16）`); closeModal(); commit(`${i.name} を発注しました`); break; }
+    case 'inv': { const i = S.inv.find(x => x.code===id), d = Number(el.dataset.d);
+      modal(`${d>0?'入庫':'出庫'}登録｜${esc(i.name)}`, `<dl class="dl" style="grid-template-columns:1fr 1fr"><div><dt>現在庫</dt><dd class="num">${nf(i.qty)} ${i.unit}</dd></div><div><dt>安全在庫</dt><dd class="num">${nf(i.safe)} ${i.unit}</dd></div></dl>
+        <div class="fg"><label class="w">数量（${i.unit}）<input id="f-qty" type="number" min="1" value="100"></label></div>`,
+        `<button class="btn plain sm" style="height:40px" data-act="close">キャンセル</button><button class="btn primary sm" style="height:40px" data-act="invsave" data-id="${id}" data-d="${d}">${d>0?'入庫':'出庫'}を登録</button>`, 420);
+      $('#f-qty').select(); break; }
+    case 'invsave': { const i = S.inv.find(x => x.code===id), d = Number(el.dataset.d), q = parseInt($('#f-qty').value,10);
+      if (!(q>0)) return toast('数量を入力してください'); if (d<0 && q>i.qty) return toast('在庫数を超える出庫はできません');
+      i.qty += d*q; if (i.qty>=i.safe) { i.ordered = false; S.alerts.forEach(x => { if (x.item===i.code) x.done = true; }); }
+      feed(`${i.name} ${d>0?'入庫':'出庫'} ${nf(q)}${i.unit}`); closeModal(); commit(`${d>0?'入庫':'出庫'}を登録しました`); break; }
+    case 'qcadd': modal('検査記録を追加', `<div class="fg">
+        <label class="w">生産指示<select id="f-qo">${S.orders.map(o => `<option value="${o.id}">${o.id}　${esc(o.product)}</option>`).join('')}</select></label>
+        <label class="w">検査項目<input id="f-qi" value="外観検査"></label>
+        <label>検査数<input id="f-qn" type="number" min="1" value="50"></label><label>不良数<input id="f-qg" type="number" min="0" value="0"></label></div>`,
+        `<button class="btn plain sm" style="height:40px" data-act="close">キャンセル</button><button class="btn primary sm" style="height:40px" data-act="qcsave">記録する</button>`); break;
+    case 'qcsave': { const o = ord($('#f-qo').value), n = parseInt($('#f-qn').value,10), g = parseInt($('#f-qg').value,10)||0;
+      if (!o || !(n>0) || g<0 || g>n) return toast('検査数・不良数を正しく入力してください');
+      S.qc.unshift({t:hm(S.now), order:o.id, product:o.product, item:$('#f-qi').value.trim()||'外観検査', n, ng:g, by:'デモ'}); feed(`${o.product} 検査記録（${n}個中 不良${g}）`); closeModal(); commit('検査記録を追加しました'); break; }
+    case 'maint': { const m = S.equip.find(x => x.id===id); m.next = '12/13'; feed(`${m.name} 点検記録を登録`); commit(`${m.name} の点検を記録しました（次回 12/13）`); break; }
+    case 'settings': modal('設定', `<div class="note g">このデモはブラウザ内だけで動作しています。追加・削除・進捗はこのブラウザに保存され、再読み込みしても残ります。<br>画面右上の <b>LIVE</b> で時間の進行を一時停止、<b>×1</b> で早送りができます。</div>`,
+        `<button class="btn danger sm l" style="height:40px" data-act="reset">デモデータをリセット（13:00 に戻す）</button><button class="btn plain sm" style="height:40px" data-act="close">閉じる</button>`); break;
+    case 'reset': S = seed(); step(); ui.seenFeed = 99; ui.day = 0; ui.line = 'all'; setTimer(); closeModal(); commit('初期状態に戻しました'); break;
+  }
+});
+document.addEventListener('change', e => {
+  if (e.target.id==='daysel') { ui.day = Number(e.target.value); e.target.blur(); render(true); }
+  if (e.target.id==='linesel') { ui.line = e.target.value; e.target.blur(); render(true); }
+});
+document.addEventListener('input', e => { if (e.target.id==='q') { ui.q = e.target.value; render(true); } });
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') { closeModal(); $('#bellmenu').classList.remove('show'); }
+  if (e.key==='Enter' && !e.isComposing && e.target.closest('.modal') && e.target.tagName==='INPUT') $('.modal footer .btn.primary')?.click();
+});
+
+/* ---------- live loop ---------- */
+let timer;
+function tick(){
+  if (!S.live) return;
+  const before = S.alerts.length;
+  S.now++; step(); save(); render();
+  if (S.alerts.length > before) { const a = S.alerts[S.alerts.length-1]; toast(`新しいアラート：${a.line} ${a.title}`, '確認する', () => alertModal(a.id)); }
+}
+function setTimer(){ clearInterval(timer); timer = setInterval(tick, 3000/S.speed); }
+
+load();
+ui.seenFeed = S.feed[0] ? S.feed[0].id : 0; ui.seenAlert = S.alerts.map(a => a.id).join(',');
+render(true); setTimer();
+})();
+</script>
+</body>
+</html>
